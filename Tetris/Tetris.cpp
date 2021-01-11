@@ -159,6 +159,9 @@ int degree;
 int pos_x;
 int pos_y;
 
+// 스코어
+int score = 0;
+
 // 커서숨기기
 void CursorView(char show)
 {
@@ -208,6 +211,28 @@ void field_init()
 	}
 }
 
+void complete_check()
+{
+	for (int i = 5;i < HEIGHT - 1;i++)
+	{
+		bool comp_flag = true;
+		for (int j = 1;j < WEIGHT - 1;j++)
+			if (field[i][j] == "  ")
+			{
+				comp_flag = false;
+				break;
+			}
+
+		if (comp_flag)
+		{
+			score++;
+			for (int j = 1;j < WEIGHT - 1; j++)
+				for (int k = i; k >= 5;k--)
+					field[k][j] = field[k - 1][j];
+		}
+	}
+}
+
 // 왼쪽 빈곳인지 판단
 bool move_left(int nowMino)
 {
@@ -236,6 +261,27 @@ bool move_right(int nowMino)
 	return true;
 }
 
+bool move_down(int nowMino)
+{
+	for (int i = 0; i <= 3; i++)
+		for (int j = 3;j >= 0;j--)
+			if (mino[nowMino][degree][i][j] == 1)
+			{
+				if (field[pos_y + i + 1][pos_x + j] != "  ")
+					return false;
+				break;
+			}
+	return true;
+}
+
+bool gameover()
+{
+	for (int i = 1; i < WEIGHT - 1; i++)
+		if (field[4][i] != "  ")
+			return false;
+	return true;
+}
+
 // 미노 내려놓기
 void drop_mino(int nowMino, bool& minoFlag)
 {
@@ -249,7 +295,12 @@ void drop_mino(int nowMino, bool& minoFlag)
 				break;
 			}
 		if (!minoFlag)
+		{
+			// 게임오버 체크
+			if (gameover())
+				break;
 			break;
+		}
 	}
 }
 
@@ -337,15 +388,19 @@ void key_check(int nowMino, bool& minoFlag)
 			break;
 
 		case DOWN:
-			delete_mino(nowMino);
-			pos_y++;
+			if (move_down(nowMino))
+			{
+				delete_mino(nowMino);
+				pos_y++;
+			}
 			break;
 
 		case SPACE:
 			delete_mino(nowMino);
 			while (true)
 			{
-				pos_y++;
+				if (move_down(nowMino))
+					pos_y++;
 				drop_mino(nowMino, minoFlag);
 				if (!minoFlag) break;
 			}
@@ -353,6 +408,7 @@ void key_check(int nowMino, bool& minoFlag)
 		}
 	}
 }
+
 
 int main()
 {
@@ -409,16 +465,15 @@ int main()
 		key_check(nowMino, minoFlag);
 		
 		// 화면 초기화 주기
-		Sleep(10);
+		Sleep(1);
 
 		// 시간에 따른 미노이동
 		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - time1);
-		if (elapsed.count() % 1000 < 30)
+		if (elapsed.count() % 1000 < 10)
 		{
 			delete_mino(nowMino);
 			pos_y++;
 		}
-
 		// 그리기
 		draw_mino(nowMino);
 		for (int i = 0;i < HEIGHT;i++)
@@ -427,29 +482,22 @@ int main()
 			for (int j = 0;j < WEIGHT;j++)
 				cout << field[i][j];
 		}
+		gotoxy(33, 7);
+		cout << score;
 
 		// 미노 내려놓기
 		drop_mino(nowMino, minoFlag);
 
 		// 완성 줄 체크
-		for (int i = 5;i <HEIGHT - 1;i++)
-		{
-			bool comp_flag = true;
-			for (int j = 1;j < WEIGHT - 1;j++)
-				if (field[i][j] == "  ")
-				{
-					comp_flag = false;
-					break;
-				}
-
-			if (comp_flag)
-			{
-				for (int j = 1;j < WEIGHT - 1; j++)
-					for (int k = i; k >= 5;k--)
-						field[k][j] = field[k - 1][j];
-			}
-		}
+		if (!minoFlag)
+			complete_check();
+		
+		
 	}
+
+	system("cls");
+	gotoxy(10, 10);
+	cout << "Game Over" << endl;
 
 	return 0;
 }
