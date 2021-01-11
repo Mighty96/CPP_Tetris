@@ -18,6 +18,10 @@ const int SPACE = 32;
 
 using namespace std;
 
+// 배경필드
+vector<vector<string>> field(HEIGHT, vector<string>(WEIGHT, ""));
+
+// 미노 모양
 vector<vector<vector<vector<char>>>> mino{
 	//I미노
 	{{{0,0,0,0},
@@ -148,6 +152,13 @@ vector<vector<vector<vector<char>>>> mino{
 	  {0,1,0,0}}}
 };
 
+// 현재 내려오는 블럭 각도
+int degree;
+
+// 현재의 블럭기준점 위치
+int pos_x;
+int pos_y;
+
 // 커서숨기기
 void CursorView(char show)
 {
@@ -170,7 +181,7 @@ void gotoxy(short x, short y)
 }
 
 // 필드 초기화
-void field_init(vector<vector<string>> &field)
+void field_init()
 {
 	for (int i = 0; i < HEIGHT - 1; i++)
 		for (int j = 1; j < WEIGHT; j++)
@@ -197,8 +208,54 @@ void field_init(vector<vector<string>> &field)
 	}
 }
 
+// 왼쪽 빈곳인지 판단
+bool move_left(int nowMino)
+{
+	for (int i = 0;i <= 3;i++)
+		for (int j = 0; j <= 3;j++)
+			if (mino[nowMino][degree][i][j] == 1)
+			{
+				if (field[pos_y + i][pos_x + j - 1] != "  ")
+					return false;
+				break;
+			}
+	return true;
+}
+
+// 오른쪽 빈곳인지 판단
+bool move_right(int nowMino)
+{
+	for (int i = 0;i <= 3;i++)
+		for (int j = 3; j >= 0;j--)
+			if (mino[nowMino][degree][i][j] == 1)
+			{
+				if (field[pos_y + i][pos_x + j + 1] != "  ")
+					return false;
+				break;
+			}
+	return true;
+}
+
+// 미노 내려놓기
+void drop_mino(int nowMino, bool& minoFlag)
+{
+	for (int i = 0; i < 4;i++)
+	{
+		for (int j = 3;j >= 0;j--)
+			if (mino[nowMino][degree][j][i] == 1)
+			{
+				if (field[pos_y + j + 1][pos_x + i] == "□" || field[pos_y + j + 1][pos_x + i] == "■")
+					minoFlag = false;
+				break;
+			}
+		if (!minoFlag)
+			break;
+	}
+}
+
+
 // 내려오는 미노 표현
-void draw_mino(vector<vector<string>>& field, int nowMino, int pos_x, int pos_y, int degree)
+void draw_mino(int nowMino)
 {
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
@@ -207,7 +264,7 @@ void draw_mino(vector<vector<string>>& field, int nowMino, int pos_x, int pos_y,
 }
 
 // 기존 내려오는 미노 삭제
-void delete_mino(vector<vector<string>>& field, int nowMino, int pos_x, int pos_y, int degree)
+void delete_mino(int nowMino)
 {
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
@@ -230,7 +287,7 @@ int new_mino(vector<bool>& minoBag)
 	while (true)
 	{
 		int temp = rand() % 7;
-		
+
 		if (temp == 0 && minoBag[0] == true) // I미노
 			return 0;
 		else if (temp == 1 && minoBag[1] == true) // O미노
@@ -248,16 +305,62 @@ int new_mino(vector<bool>& minoBag)
 	}
 }
 
+void key_check(int nowMino, bool& minoFlag)
+{
+	int keyInput = 0;
+
+	if (_kbhit())
+	{
+		keyInput = _getch();
+		switch (keyInput)
+		{
+		case LEFT:
+			if (move_left(nowMino))
+			{
+				delete_mino(nowMino);
+				pos_x--;
+			}
+			break;
+
+		case RIGHT:
+			if (move_right(nowMino))
+			{
+				delete_mino(nowMino);
+				pos_x++;
+			}
+			break;
+
+		case UP:
+			delete_mino(nowMino);
+			if (degree == 3) degree = 0;
+			else degree++;
+			break;
+
+		case DOWN:
+			delete_mino(nowMino);
+			pos_y++;
+			break;
+
+		case SPACE:
+			delete_mino(nowMino);
+			while (true)
+			{
+				pos_y++;
+				drop_mino(nowMino, minoFlag);
+				if (!minoFlag) break;
+			}
+			break;
+		}
+	}
+}
 
 int main()
 {
-	// 배경필드
-	vector<vector<string>> field(HEIGHT, vector<string>(WEIGHT, ""));
-
+	// 커서감추기
 	CursorView(0);
 
 	// 필드초기화
-	field_init(field);
+	field_init();
 
 	// 7블럭 1세트
 	vector<bool> minoBag(7);
@@ -268,22 +371,12 @@ int main()
 
 	// 미노 랜덤시드 초기화
 	srand((unsigned int)time(0));
-	
-	// 키입력 확인
-	char keyInput = 0;
 
 	// 현재 내려오는 블럭유무 판단
 	bool minoFlag = false;
 
 	// 현재 내려오는 블럭 종류
 	int nowMino;
-
-	// 현재 내려오는 블럭 각도
-	int degree;
-
-	// 현재의 블럭기준점 위치
-	int pos_x;
-	int pos_y;
 
 	// 블럭 시간
 	auto time1 = std::chrono::steady_clock::now();
@@ -313,48 +406,21 @@ int main()
 		}
 
 		// 키입력 확인
-		if (_kbhit())
-		{
-			keyInput = _getch();
-			switch(keyInput)
-			{
-			case LEFT:
-				delete_mino(field, nowMino, pos_x, pos_y, degree);
-				pos_x--;
-				break;
-				
-			case RIGHT:
-				delete_mino(field, nowMino, pos_x, pos_y, degree);
-				pos_x++;
-				break;
-
-			case UP:
-				delete_mino(field, nowMino, pos_x, pos_y, degree);
-				if (degree == 3) degree = 0;
-				else degree++;
-				break;
-			
-			case DOWN:
-				delete_mino(field, nowMino, pos_x, pos_y, degree);
-				pos_y++;
-				break;
-			}
-		}
-
+		key_check(nowMino, minoFlag);
+		
+		// 화면 초기화 주기
 		Sleep(10);
 
 		// 시간에 따른 미노이동
 		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - time1);
 		if (elapsed.count() % 1000 < 30)
 		{
-			delete_mino(field, nowMino, pos_x, pos_y, degree);
+			delete_mino(nowMino);
 			pos_y++;
 		}
 
-
-
 		// 그리기
-		draw_mino(field, nowMino, pos_x, pos_y, degree);
+		draw_mino(nowMino);
 		for (int i = 0;i < HEIGHT;i++)
 		{
 			gotoxy(3, 3 + i);
@@ -363,17 +429,25 @@ int main()
 		}
 
 		// 미노 내려놓기
-		for (int i = 0; i < 4;i++)
+		drop_mino(nowMino, minoFlag);
+
+		// 완성 줄 체크
+		for (int i = 5;i <HEIGHT - 1;i++)
 		{
-			for (int j = 3;j >= 0;j--)
-				if (mino[nowMino][degree][j][i] == 1)
+			bool comp_flag = true;
+			for (int j = 1;j < WEIGHT - 1;j++)
+				if (field[i][j] == "  ")
 				{
-					if (field[pos_y + j + 1][pos_x + i] == "□" || field[pos_y + j + 1][pos_x + i] == "■")
-						minoFlag = false;
+					comp_flag = false;
 					break;
 				}
-			if (!minoFlag)
-				break;
+
+			if (comp_flag)
+			{
+				for (int j = 1;j < WEIGHT - 1; j++)
+					for (int k = i; k >= 5;k--)
+						field[k][j] = field[k - 1][j];
+			}
 		}
 	}
 
