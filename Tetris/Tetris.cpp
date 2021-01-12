@@ -472,6 +472,8 @@ int main()
 		// 키입력 확인
 		key_check(nowMino, minoFlag, switchFlag, real_time, speed);
 		
+		"test";
+
 		// 화면 초기화 주기
 		Sleep(1);
 		real_time++;
