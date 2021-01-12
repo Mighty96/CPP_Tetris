@@ -4,7 +4,6 @@
 #include <conio.h>
 #include <Windows.h>
 #include <ctime>
-#include <chrono>
 
 const int WEIGHT = 12;
 const int HEIGHT = 25;
@@ -265,9 +264,9 @@ bool move_down(int nowMino)
 {
 	for (int i = 0; i <= 3; i++)
 		for (int j = 3;j >= 0;j--)
-			if (mino[nowMino][degree][i][j] == 1)
+			if (mino[nowMino][degree][j][i] == 1)
 			{
-				if (field[pos_y + i + 1][pos_x + j] != "  ")
+				if (field[pos_y + j + 1][pos_x + i] != "  ")
 					return false;
 				break;
 			}
@@ -277,13 +276,13 @@ bool move_down(int nowMino)
 bool gameover()
 {
 	for (int i = 1; i < WEIGHT - 1; i++)
-		if (field[4][i] != "  ")
+		if (field[10][i] != "  ")
 			return false;
 	return true;
 }
 
 // 미노 내려놓기
-void drop_mino(int nowMino, bool& minoFlag)
+bool drop_mino(int nowMino)
 {
 	for (int i = 0; i < 4;i++)
 	{
@@ -291,17 +290,11 @@ void drop_mino(int nowMino, bool& minoFlag)
 			if (mino[nowMino][degree][j][i] == 1)
 			{
 				if (field[pos_y + j + 1][pos_x + i] == "□" || field[pos_y + j + 1][pos_x + i] == "■")
-					minoFlag = false;
+					return true;
 				break;
 			}
-		if (!minoFlag)
-		{
-			// 게임오버 체크
-			if (gameover())
-				break;
-			break;
-		}
 	}
+	return false;
 }
 
 
@@ -356,7 +349,7 @@ int new_mino(vector<bool>& minoBag)
 	}
 }
 
-void key_check(int nowMino, bool& minoFlag)
+void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, int count)
 {
 	int keyInput = 0;
 
@@ -392,7 +385,11 @@ void key_check(int nowMino, bool& minoFlag)
 			{
 				delete_mino(nowMino);
 				pos_y++;
+				switchFlag = drop_mino(nowMino);
 			}
+			else
+				minoFlag = false;
+			real_time = 0;
 			break;
 
 		case SPACE:
@@ -401,8 +398,12 @@ void key_check(int nowMino, bool& minoFlag)
 			{
 				if (move_down(nowMino))
 					pos_y++;
-				drop_mino(nowMino, minoFlag);
-				if (!minoFlag) break;
+				switchFlag = drop_mino(nowMino);
+				if (switchFlag)
+				{
+					real_time = count;
+					break;
+				}
 			}
 			break;
 		}
@@ -431,15 +432,23 @@ int main()
 	// 현재 내려오는 블럭유무 판단
 	bool minoFlag = false;
 
+	// 블럭이 바닥에 닿았는지 판단하는 중간스위치
+	bool switchFlag = false;
+
 	// 현재 내려오는 블럭 종류
 	int nowMino;
 
 	// 블럭 시간
-	auto time1 = std::chrono::steady_clock::now();
-	auto time2 = std::chrono::steady_clock::now();
-
+	int real_time = 0;
+	int level = 0;
+	int speed = 60 - level * 6;
+	
 	while (true)
 	{
+		// 난이도 설정
+		level = score / 5;
+		speed = 60 - level * 6;
+
 		// 미노가방에 미노가 남아있는가?
 		if (minoBagCount == 0)
 		{
@@ -458,21 +467,32 @@ int main()
 			degree = 0;
 			pos_x = 4;
 			pos_y = 0;
-			time1 = std::chrono::steady_clock::now(); // 블럭 생성시 시간 저장
 		}
 
 		// 키입력 확인
-		key_check(nowMino, minoFlag);
+		key_check(nowMino, minoFlag, switchFlag, real_time, speed);
 		
 		// 화면 초기화 주기
 		Sleep(1);
+		real_time++;
+		cout << real_time << '\n';
 
 		// 시간에 따른 미노이동
-		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - time1);
-		if (elapsed.count() % 1000 < 10)
+		if (real_time >= speed)
 		{
-			delete_mino(nowMino);
-			pos_y++;
+			
+			if (switchFlag)
+			{
+				minoFlag = false;
+				switchFlag = false;
+				real_time = 0;
+			}
+			else
+			{
+				delete_mino(nowMino);
+				pos_y++;
+			}
+
 		}
 		// 그리기
 		draw_mino(nowMino);
@@ -482,11 +502,21 @@ int main()
 			for (int j = 0;j < WEIGHT;j++)
 				cout << field[i][j];
 		}
+
+		// 스코어보드
 		gotoxy(33, 7);
-		cout << score;
+		cout << "Your score: " << score << '\n';
+		gotoxy(33, 8);
+		cout << "Game Level: " << level << '\n';
 
 		// 미노 내려놓기
-		drop_mino(nowMino, minoFlag);
+		if (real_time >= speed)
+		{
+			switchFlag = drop_mino(nowMino);
+			real_time = 0;
+		}
+
+		
 
 		// 완성 줄 체크
 		if (!minoFlag)
