@@ -1,8 +1,8 @@
 #include <iostream>
-#include <vector>
+#include "Mino.h"
+#include "Console.h"
 #include <string>
 #include <conio.h>
-#include <Windows.h>
 #include <ctime>
 
 const int WEIGHT = 12;
@@ -20,136 +20,6 @@ using namespace std;
 // 배경필드
 vector<vector<string>> field(HEIGHT, vector<string>(WEIGHT, ""));
 
-// 미노 모양
-vector<vector<vector<vector<char>>>> mino{
-	//I미노
-	{{{0,0,0,0},
-	  {0,0,0,0},
-	  {1,1,1,1},
-	  {0,0,0,0}},
-	 {{0,0,1,0},
-	  {0,0,1,0},
-	  {0,0,1,0},
-	  {0,0,1,0}},
-	 {{0,0,0,0},
-	  {0,0,0,0},
-	  {1,1,1,1},
-	  {0,0,0,0}},
-	 {{0,1,0,0},
-	  {0,1,0,0},
-	  {0,1,0,0},
-	  {0,1,0,0}}
-	 },
-
-	  //O미노
-	{{{0,0,0,0},
-	  {0,1,1,0},
-	  {0,1,1,0},
-	  {0,0,0,0}},
-	 {{0,0,0,0},
-	  {0,1,1,0},
-	  {0,1,1,0},
-	  {0,0,0,0}},
-	 {{0,0,0,0},
-	  {0,1,1,0},
-	  {0,1,1,0},
-	  {0,0,0,0}},
-	 {{0,0,0,0},
-	  {0,1,1,0},
-	  {0,1,1,0},
-	  {0,0,0,0}}},
-
-	//Z미노
-	{{{0,0,0,0},
-	  {1,1,0,0},
-	  {0,1,1,0},
-	  {0,0,0,0}},
-	 {{0,0,0,0},
-	  {0,0,1,0},
-	  {0,1,1,0},
-	  {0,1,0,0}},
-	 {{0,0,0,0},
-	  {0,0,0,0},
-	  {1,1,0,0},
-	  {0,1,1,0}},
-	 {{0,0,0,0},
-	  {0,1,0,0},
-	  {1,1,0,0},
-	  {1,0,0,0}}},
-
-
-    //S미노
-    {{{0,0,0,0},
-   	  {0,1,1,0},
-	  {1,1,0,0},
-	  {0,0,0,0}},
-     {{0,0,0,0},
-	  {0,1,0,0},
-	  {0,1,1,0},
-	  {0,0,1,0}},
-     {{0,0,0,0},
-	  {0,0,0,0},
-	  {0,1,1,0},
-	  {1,1,0,0}},
-     {{0,0,0,0},
-	  {1,0,0,0},
-	  {1,1,0,0},
-	  {0,1,0,0}}},
-
-	//J미노
-	{{{0,0,0,0},
-	  {1,0,0,0},
-	  {1,1,1,0},
-	  {0,0,0,0}},
-	 {{0,0,0,0},
-	  {0,1,1,0},
-	  {0,1,0,0},
-	  {0,1,0,0}},
-	 {{0,0,0,0},
-	  {0,0,0,0},
-	  {1,1,1,0},
-	  {0,0,1,0}},
-	 {{0,0,0,0},
-	  {0,1,0,0},
-	  {0,1,0,0},
-	  {1,1,0,0}}},
-
-	 //L미노
-    {{{0,0,0,0},
-	  {0,0,1,0},
-	  {1,1,1,0},
-	  {0,0,0,0}},
-     {{0,0,0,0},
-	  {0,1,0,0},
-	  {0,1,0,0},
-	  {0,1,1,0}},
-     {{0,0,0,0},
-	  {0,0,0,0},
-	  {1,1,1,0},
-	  {1,0,0,0}},
-     {{0,0,0,0},
-	  {1,1,0,0},
-	  {0,1,0,0},
-	  {0,1,0,0}}},
-
-	//T미노
-	{{{0,0,0,0},
-	  {0,1,0,0},
-	  {1,1,1,0},
-	  {0,0,0,0}},
-	 {{0,0,0,0},
-	  {0,1,0,0},
-	  {0,1,1,0},
-	  {0,1,0,0}},
-	 {{0,0,0,0},
-	  {0,0,0,0},
-	  {1,1,1,0},
-	  {0,1,0,0}},
-	 {{0,0,0,0},
-	  {0,1,0,0},
-	  {1,1,0,0},
-	  {0,1,0,0}}}
-};
 
 // 현재 내려오는 블럭 각도
 int degree;
@@ -161,26 +31,7 @@ int pos_y;
 // 스코어
 int score = 0;
 
-// 커서숨기기
-void CursorView(char show)
-{
-	HANDLE hConsole;
-	CONSOLE_CURSOR_INFO ConsoleCursor;
 
-	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	ConsoleCursor.bVisible = show;
-	ConsoleCursor.dwSize = 1;
-
-	SetConsoleCursorInfo(hConsole, &ConsoleCursor);
-}
-
-// 커서이동
-void gotoxy(short x, short y)
-{
-	COORD pos = { x,y };
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
-}
 
 // 필드 초기화
 void field_init()
@@ -260,6 +111,7 @@ bool move_right(int nowMino)
 	return true;
 }
 
+// 아래 빈곳인지 판단
 bool move_down(int nowMino)
 {
 	for (int i = 0; i <= 3; i++)
@@ -273,12 +125,22 @@ bool move_down(int nowMino)
 	return true;
 }
 
+// 게임오버
 bool gameover()
 {
-	for (int i = 1; i < WEIGHT - 1; i++)
-		if (field[10][i] != "  ")
-			return false;
-	return true;
+	for (int i = 1; i < WEIGHT - 2; i++)
+		if (field[4][i] != "  ")
+		{
+			Sleep(300);
+			for (int j = 0; j < HEIGHT; j++)
+			{
+				gotoxy(3, 3 + j);
+				cout << "                           ";
+				Sleep(60);
+			}
+			return true;
+		}
+	return false;
 }
 
 // 미노 내려놓기
@@ -349,7 +211,19 @@ int new_mino(vector<bool>& minoBag)
 	}
 }
 
-void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, int count)
+// 인피니트 카운트
+void infinite_rule(int nowMino, int& real_time, int count, int& infinite_count)
+{
+	if (drop_mino(nowMino) && infinite_count < 16)
+	{
+		real_time = (count + infinite_count) / 2;
+		infinite_count++;
+	}
+}
+
+
+// 키보드 입력 체크
+void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, int count, int &infinite_count)
 {
 	int keyInput = 0;
 
@@ -363,6 +237,7 @@ void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, in
 			{
 				delete_mino(nowMino);
 				pos_x--;
+				infinite_rule(nowMino, real_time, count, infinite_count);
 			}
 			break;
 
@@ -370,7 +245,8 @@ void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, in
 			if (move_right(nowMino))
 			{
 				delete_mino(nowMino);
-				pos_x++;
+				pos_x++;	
+				infinite_rule(nowMino, real_time, count, infinite_count);
 			}
 			break;
 
@@ -378,6 +254,7 @@ void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, in
 			delete_mino(nowMino);
 			if (degree == 3) degree = 0;
 			else degree++;
+			infinite_rule(nowMino, real_time, count, infinite_count);
 			break;
 
 		case DOWN:
@@ -388,7 +265,8 @@ void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, in
 				switchFlag = drop_mino(nowMino);
 			}
 			else
-				minoFlag = false;
+			minoFlag = false;
+			infinite_count = 0;
 			real_time = 0;
 			break;
 
@@ -443,6 +321,9 @@ int main()
 	int level = 0;
 	int speed = 60 - level * 6;
 	
+	// 인피니티 룰 카운트
+	int infinite_count = 0;
+
 	while (true)
 	{
 		// 난이도 설정
@@ -470,20 +351,17 @@ int main()
 		}
 
 		// 키입력 확인
-		key_check(nowMino, minoFlag, switchFlag, real_time, speed);
+		key_check(nowMino, minoFlag, switchFlag, real_time, speed, infinite_count);
 		
-		"test";
-
 		// 화면 초기화 주기
 		Sleep(1);
 		real_time++;
-		cout << real_time << '\n';
 
 		// 시간에 따른 미노이동
 		if (real_time >= speed)
 		{
 			
-			if (switchFlag)
+			if (switchFlag && drop_mino(nowMino))
 			{
 				minoFlag = false;
 				switchFlag = false;
@@ -493,6 +371,7 @@ int main()
 			{
 				delete_mino(nowMino);
 				pos_y++;
+				infinite_count = 0;
 			}
 
 		}
@@ -524,7 +403,9 @@ int main()
 		if (!minoFlag)
 			complete_check();
 		
-		
+		if (!minoFlag)
+			if (gameover())
+				break;
 	}
 
 	system("cls");
