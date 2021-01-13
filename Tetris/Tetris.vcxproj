@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClInclude Include="Console.h" />
     <ClInclude Include="Mino.h" />
+    <ClInclude Include="MinoRotation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,9 +1,9 @@
 #include <iostream>
-#include "Mino.h"
 #include "Console.h"
 #include <string>
 #include <conio.h>
 #include <ctime>
+#include "MinoRotation.h"
 
 const int WEIGHT = 12;
 const int HEIGHT = 25;
@@ -13,6 +13,10 @@ const int UP = 72;
 const int RIGHT = 77;
 const int DOWN = 80;
 const int SPACE = 32;
+const int QUIT = 81;
+const int quit = 113;
+const int RETRY = 82;
+const int retry = 114;
 
 
 using namespace std;
@@ -216,7 +220,7 @@ void infinite_rule(int nowMino, int& real_time, int count, int& infinite_count)
 {
 	if (drop_mino(nowMino) && infinite_count < 16)
 	{
-		real_time = (count + infinite_count) / 2;
+		real_time = count - 30;
 		infinite_count++;
 	}
 }
@@ -251,10 +255,13 @@ void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, in
 			break;
 
 		case UP:
-			delete_mino(nowMino);
-			if (degree == 3) degree = 0;
-			else degree++;
-			infinite_rule(nowMino, real_time, count, infinite_count);
+			if (minoRotation(nowMino, degree, pos_x, pos_y, field))
+			{
+				delete_mino(nowMino);
+				if (degree == 3) degree = 0;
+				else degree++;
+				infinite_rule(nowMino, real_time, count, infinite_count);
+			}
 			break;
 
 		case DOWN:
@@ -279,7 +286,7 @@ void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, in
 				switchFlag = drop_mino(nowMino);
 				if (switchFlag)
 				{
-					real_time = count;
+					real_time = count - 1;
 					break;
 				}
 			}
@@ -291,126 +298,171 @@ void key_check(int nowMino, bool& minoFlag, bool& switchFlag, int &real_time, in
 
 int main()
 {
-	// 커서감추기
-	CursorView(0);
-
-	// 필드초기화
-	field_init();
-
-	// 7블럭 1세트
-	vector<bool> minoBag(7);
-	mino_bag_init(minoBag);
-
-	// 주머니 소비 카운트
-	char minoBagCount = NUM_MINO;
-
-	// 미노 랜덤시드 초기화
-	srand((unsigned int)time(0));
-
-	// 현재 내려오는 블럭유무 판단
-	bool minoFlag = false;
-
-	// 블럭이 바닥에 닿았는지 판단하는 중간스위치
-	bool switchFlag = false;
-
-	// 현재 내려오는 블럭 종류
-	int nowMino;
-
-	// 블럭 시간
-	int real_time = 0;
-	int level = 0;
-	int speed = 60 - level * 6;
-	
-	// 인피니티 룰 카운트
-	int infinite_count = 0;
-
 	while (true)
 	{
-		// 난이도 설정
-		level = score / 5;
-		speed = 60 - level * 6;
+		// 커서감추기
+		CursorView(0);
 
-		// 미노가방에 미노가 남아있는가?
-		if (minoBagCount == 0)
+		// 필드초기화
+		field_init();
+
+		// 7블럭 1세트
+		vector<bool> minoBag(7);
+		mino_bag_init(minoBag);
+
+		// 주머니 소비 카운트
+		char minoBagCount = NUM_MINO;
+
+		// 미노 랜덤시드 초기화
+		srand((unsigned int)time(0));
+
+		// 현재 내려오는 블럭유무 판단
+		bool minoFlag = false;
+
+		// 블럭이 바닥에 닿았는지 판단하는 중간스위치
+		bool switchFlag = false;
+
+		// 현재 내려오는 블럭 종류
+		int nowMino;
+
+		// 블럭 시간
+		int real_time = 0;
+		int level = 0;
+		int speed = 60 - level * 6;
+
+		// 인피니티 룰 카운트
+		int infinite_count = 0;
+
+		while (true)
 		{
-			minoBagCount = NUM_MINO;
-			mino_bag_init(minoBag);
-			
-		}
+			// 난이도 설정
+			level = score / 5;
+			speed = 60 - level * 6;
 
-		// 현재 내려오는 미노가 없다면 새로 생성.
-		if (!minoFlag)
-		{
-			minoFlag = true;
-			minoBagCount--;
-			nowMino = new_mino(minoBag);
-			minoBag[nowMino] = false;
-			degree = 0;
-			pos_x = 4;
-			pos_y = 0;
-		}
-
-		// 키입력 확인
-		key_check(nowMino, minoFlag, switchFlag, real_time, speed, infinite_count);
-		
-		// 화면 초기화 주기
-		Sleep(1);
-		real_time++;
-
-		// 시간에 따른 미노이동
-		if (real_time >= speed)
-		{
-			
-			if (switchFlag && drop_mino(nowMino))
+			// 미노가방에 미노가 남아있는가?
+			if (minoBagCount == 0)
 			{
-				minoFlag = false;
-				switchFlag = false;
+				minoBagCount = NUM_MINO;
+				mino_bag_init(minoBag);
+
+			}
+
+			// 현재 내려오는 미노가 없다면 새로 생성.
+			if (!minoFlag)
+			{
+				minoFlag = true;
+				minoBagCount--;
+				nowMino = new_mino(minoBag);
+				minoBag[nowMino] = false;
+				degree = 0;
+				pos_x = 4;
+				pos_y = 0;
+			}
+
+			// 화면 초기화 주기
+			Sleep(1);
+			real_time++;
+
+			// 시간에 따른 미노이동
+			if (real_time >= speed)
+			{
+
+				if (switchFlag && drop_mino(nowMino))
+				{
+					minoFlag = false;
+					switchFlag = false;
+					real_time = 0;
+				}
+				else if (!drop_mino(nowMino))
+				{
+					delete_mino(nowMino);
+					pos_y++;
+					infinite_count = 0;
+					real_time = 0;
+				}
+
+			}
+
+			// 키입력 확인
+			key_check(nowMino, minoFlag, switchFlag, real_time, speed, infinite_count);
+
+			// 그리기
+			draw_mino(nowMino);
+			for (int i = 0;i < HEIGHT;i++)
+			{
+				gotoxy(3, 3 + i);
+				for (int j = 0;j < WEIGHT;j++)
+					cout << field[i][j];
+			}
+
+			// 스코어보드
+			gotoxy(33, 7);
+			cout << "Your score: " << score << '\n';
+			gotoxy(33, 8);
+			cout << "Game Level: " << level << '\n';
+
+			// 미노 내려놓기
+			if (real_time >= speed && !switchFlag)
+			{
+				switchFlag = drop_mino(nowMino);
 				real_time = 0;
 			}
-			else
+
+
+
+			// 완성 줄 체크
+			if (!minoFlag)
+				complete_check();
+
+			if (!minoFlag)
+				if (gameover())
+					break;
+		}
+
+		system("cls");
+		cout << "□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□□□■■■■□□□□□□□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□□■□□□□■□□□□□□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□■□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□■□□□□□□□□□■■■□□□■■■■□■■■□□□□■■■□□\n";
+		cout << "□■□□■■■■□□■□□□■□□■□□□■□□□■□□■□□□■□\n";
+		cout << "□■□□□□□■□□□□□□■□□■□□□■□□□■□□■□□□■□\n";
+		cout << "□■□□□□□■□□□■■■■□□■□□□■□□□■□□■■■■■□\n";
+		cout << "□■□□□□□■□□■□□□■□□■□□□■□□□■□□■□□□□□\n";
+		cout << "□□■□□□■■□□■□□■■□□■□□□■□□□■□□■□□□■□\n";
+		cout << "□□□■■■□■□□□■■□■□□■□□□■□□□■□□□■■■□□\n";
+		cout << "□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□□□□□□□□■■■□□□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□□□□□□□■□□□■□□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□□□□□□■□□□□□■□□□□□□□□□□□□□□□□□□□□□\n";
+		cout << "□□□□□□■□□□□□■□□■□□□■□□■■■□□□■□■□□□\n";
+		cout << "□□□□□□■□□□□□■□□■□□□■□■□□□■□□■■□□□□\n";
+		cout << "□□□□□□■□□□□□■□□■□□□■□■□□□■□□■□□□□□\n";
+		cout << "□□□□□□■□□□□□■□□□■□■□□■■■■■□□■□□□□□\n";
+		cout << "□□□□□□■□□□□□■□□□■□■□□■□□□□□□■□□□□□\n";
+		cout << "□□□□□□□■□□□■□□□□□■□□□■□□□■□□■□□□□□\n";
+		cout << "□□□□□□□□■■■□□□□□□■□□□□■■■□□□■□□□□□\n";
+		cout << "□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□\n\n\n";
+		cout << "Your Score : " << score << '\n';
+		cout << "다시하기 : R / 그만하기 : Q\n";
+
+		while (true)
+		{
+			if (_kbhit())
 			{
-				delete_mino(nowMino);
-				pos_y++;
-				infinite_count = 0;
+				int keyInput = 0;
+				keyInput = _getch();
+
+				if (keyInput == QUIT || keyInput == quit)
+					return 0;
+				else if (keyInput == RETRY or keyInput == retry)
+				{
+					system("cls");
+					break;
+				}
 			}
-
 		}
-		// 그리기
-		draw_mino(nowMino);
-		for (int i = 0;i < HEIGHT;i++)
-		{
-			gotoxy(3, 3 + i);
-			for (int j = 0;j < WEIGHT;j++)
-				cout << field[i][j];
-		}
-
-		// 스코어보드
-		gotoxy(33, 7);
-		cout << "Your score: " << score << '\n';
-		gotoxy(33, 8);
-		cout << "Game Level: " << level << '\n';
-
-		// 미노 내려놓기
-		if (real_time >= speed)
-		{
-			switchFlag = drop_mino(nowMino);
-			real_time = 0;
-		}
-
-		
-
-		// 완성 줄 체크
-		if (!minoFlag)
-			complete_check();
-		
-		if (!minoFlag)
-			if (gameover())
-				break;
 	}
-
-	system("cls");
-	gotoxy(10, 10);
-	cout << "Game Over" << endl;
 
 	return 0;
 }
